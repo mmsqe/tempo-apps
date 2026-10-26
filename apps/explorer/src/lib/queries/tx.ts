@@ -144,7 +144,7 @@ async function fetchTxDataUncached(params: { hash: Hex.Hex }) {
 
 async function fetchTxData(params: { hash: Hex.Hex }) {
 	return withImmutableDataCache({
-		key: `tx-detail:v2:${getTempoChain().id}:${params.hash.toLowerCase()}`,
+		key: `tx-detail:v3:${getTempoChain().id}:${params.hash.toLowerCase()}`,
 		load: () => fetchTxDataUncached(params),
 	})
 }

@@ -3,6 +3,7 @@ import * as Hex from 'ox/Hex'
 import { getAbiItem, toEventSelector } from 'viem'
 import { Addresses } from 'viem/tempo'
 import { Abis } from '#lib/abis'
+import { isPhrasedEvent } from '#lib/domain/phrases'
 import {
 	isTip20Token,
 	type KnownEvent,
@@ -282,7 +283,12 @@ export function selectTransactionDescriptionEvents(params: {
 			!representedPrivateZoneDirections.has(direction)
 		)
 	})
-	const events = [...batchEvents, ...supplementalZoneEvents, ...activityEvents]
+	const events = [
+		...batchEvents,
+		...supplementalZoneEvents,
+		...fallbackEvents.filter(isPhrasedEvent),
+		...activityEvents,
+	]
 	return !hasPrivateZoneActivity ? [...unmatchedCalls, ...events] : events
 }
 

@@ -26,6 +26,7 @@ import {
 	isZonePortalAddress as isDeterministicZonePortalAddress,
 } from '#lib/domain/zones'
 import { decodeMemoForDisplay, isMppAttributionMemo } from '#lib/domain/memo'
+import { describePhrasedEvent } from '#lib/domain/phrases'
 import { HexFormatter } from '#lib/formatting'
 import { findBurnAtTransfers } from '#lib/domain/tx-event-groups'
 import type * as Tip20 from './tip20'
@@ -2159,7 +2160,8 @@ export function parseKnownEvent(
 		detectors.accountKeychain(event) ||
 		detectors.feeAmm(event) ||
 		detectors.streamChannel(event) ||
-		detectors.earn(event)
+		detectors.earn(event) ||
+		describePhrasedEvent(event)
 
 	if (!detected || isFeeTransferEvent(detected)) return null
 	return detected
@@ -2814,7 +2816,8 @@ export function parseKnownEvents(
 			detectors.accountKeychain(event) ||
 			detectors.feeAmm(event) ||
 			detectors.streamChannel(event) ||
-			createEarnReceiptSummary(event, dedupedEvents, createAmount)
+			createEarnReceiptSummary(event, dedupedEvents, createAmount) ||
+			describePhrasedEvent(event)
 
 		if (!detected) continue
 

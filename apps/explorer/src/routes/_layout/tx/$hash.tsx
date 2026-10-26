@@ -8,6 +8,7 @@ import {
 	useNavigate,
 } from '@tanstack/react-router'
 import type { Address as OxAddress, Hex } from 'ox'
+import type { SignatureEnvelope } from 'ox/tempo'
 import * as OxAddressUtil from 'ox/Address'
 import * as Json from 'ox/Json'
 import * as Value from 'ox/Value'
@@ -75,6 +76,7 @@ import {
 	traceQueryOptions,
 } from '#lib/queries/trace'
 import { expiringNonceKey, getNonceKey } from '#lib/domain/nonce'
+import { signatureTypeLabel } from '#lib/domain/signature-type'
 import { zHash } from '#lib/zod'
 import { fetchTransactionActivities } from '#lib/server/transaction-activities'
 import ChevronDownIcon from '~icons/lucide/chevron-down'
@@ -429,6 +431,11 @@ function OverviewSection(props: {
 	const nonce = transaction.nonce.toString()
 	const nonceKey = getNonceKey(transaction)
 	const isExpiringNonce = nonceKey === expiringNonceKey
+	const signatureType = signatureTypeLabel(
+		'signature' in transaction
+			? (transaction.signature as SignatureEnvelope.SignatureEnvelope)
+			: undefined,
+	)
 	const positionInBlock = receipt.transactionIndex
 	const input = transaction.input
 	const feePayer =
@@ -546,6 +553,11 @@ function OverviewSection(props: {
 			<InfoRow label="Transaction Type">
 				<span className="text-primary">{receipt.type}</span>
 			</InfoRow>
+			{signatureType && (
+				<InfoRow label="Signature Type">
+					<span className="text-primary">{signatureType}</span>
+				</InfoRow>
+			)}
 			{isExpiringNonce ? (
 				<>
 					<InfoRow label="Nonce Key">
