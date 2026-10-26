@@ -19,6 +19,7 @@ import {
 	getAbiItem,
 	getContractAbi,
 	getContractInfo,
+	getFunctionSelector,
 	getReadFunctions,
 	getWriteFunctions,
 	isInferredAbi,
@@ -452,5 +453,33 @@ describe('Zone protocol contracts', () => {
 		expect(info?.abi).toContainEqual(
 			expect.objectContaining({ type: 'function', name: 'verify' }),
 		)
+	})
+})
+
+describe('anchoring contract', () => {
+	it('names the proxy and its implementation, and decodes their calls', () => {
+		for (const [address, name] of [
+			['0x0000000000000000000000000000000000000A00', 'Anchoring'],
+			[
+				'0xF873bbD8B4ed0580425592a37b218BC46A628C70',
+				'Anchoring Implementation',
+			],
+		] as const)
+			expect(getContractInfo(address)?.name).toBe(name)
+		const abi = getContractAbi('0x0000000000000000000000000000000000000a00')
+		expect(abi).toBeDefined()
+		// `addRegistry` and `addRecord` as canary transactions carry them.
+		for (const [selector, name] of [
+			['0x318b38b1', 'addRegistry'],
+			['0x64d25295', 'addRecord'],
+		] as const)
+			expect(
+				(abi ?? []).some(
+					(item) =>
+						item.type === 'function' &&
+						item.name === name &&
+						getFunctionSelector(item) === selector,
+				),
+			).toBe(true)
 	})
 })

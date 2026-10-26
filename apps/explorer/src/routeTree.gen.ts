@@ -25,6 +25,7 @@ import { Route as LayoutFeeAmmRouteImport } from './routes/_layout/fee-amm'
 import { Route as LayoutBlocksRouteImport } from './routes/_layout/blocks'
 import { Route as LayoutDexIndexRouteImport } from './routes/_layout/dex/index'
 import { Route as LayoutDemoIndexRouteImport } from './routes/_layout/demo/index'
+import { Route as LayoutAnchoringIndexRouteImport } from './routes/_layout/anchoring/index'
 import { Route as ApiAbiBatchRouteImport } from './routes/api/abi/batch'
 import { Route as LayoutTxHashRouteImport } from './routes/_layout/tx/$hash'
 import { Route as LayoutTokenAddressRouteImport } from './routes/_layout/token/$address'
@@ -36,6 +37,7 @@ import { Route as LayoutDemoEmptyStateRouteImport } from './routes/_layout/demo/
 import { Route as LayoutDemoAddressRouteImport } from './routes/_layout/demo/address'
 import { Route as LayoutBlockIdRouteImport } from './routes/_layout/block/$id'
 import { Route as LayoutAddressAddressRouteImport } from './routes/_layout/address/$address'
+import { Route as LayoutAnchoringRegistryIdIndexRouteImport } from './routes/_layout/anchoring/$registryId/index'
 import { Route as ApiTxTraceHashRouteImport } from './routes/api/tx/trace/$hash'
 import { Route as ApiTxBalanceChangesHashRouteImport } from './routes/api/tx/balance-changes/$hash'
 import { Route as ApiTokenLogoAddressRouteImport } from './routes/api/token/logo/$address'
@@ -47,6 +49,7 @@ import { Route as ApiAddressHistoryAddressRouteImport } from './routes/api/addre
 import { Route as ApiAddressBalancesAddressRouteImport } from './routes/api/address/balances/$address'
 import { Route as LayoutDexFromToRouteImport } from './routes/_layout/dex/$from.$to'
 import { Route as LayoutBlockCountdownTargetBlockRouteImport } from './routes/_layout/block/countdown.$targetBlock'
+import { Route as LayoutAnchoringRegistryIdRecordIdRouteImport } from './routes/_layout/anchoring/$registryId/$recordId'
 import { Route as ApiAddressZonePortalAddressKindRouteImport } from './routes/api/address/zone-portal/$address/$kind'
 
 const SearchRoute = SearchRouteImport.update({
@@ -128,6 +131,11 @@ const LayoutDemoIndexRoute = LayoutDemoIndexRouteImport.update({
   path: '/demo/',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAnchoringIndexRoute = LayoutAnchoringIndexRouteImport.update({
+  id: '/anchoring/',
+  path: '/anchoring/',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const ApiAbiBatchRoute = ApiAbiBatchRouteImport.update({
   id: '/api/abi/batch',
   path: '/api/abi/batch',
@@ -183,6 +191,12 @@ const LayoutAddressAddressRoute = LayoutAddressAddressRouteImport.update({
   path: '/address/$address',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAnchoringRegistryIdIndexRoute =
+  LayoutAnchoringRegistryIdIndexRouteImport.update({
+    id: '/anchoring/$registryId/',
+    path: '/anchoring/$registryId/',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const ApiTxTraceHashRoute = ApiTxTraceHashRouteImport.update({
   id: '/api/tx/trace/$hash',
   path: '/api/tx/trace/$hash',
@@ -244,6 +258,12 @@ const LayoutBlockCountdownTargetBlockRoute =
     path: '/block/countdown/$targetBlock',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutAnchoringRegistryIdRecordIdRoute =
+  LayoutAnchoringRegistryIdRecordIdRouteImport.update({
+    id: '/anchoring/$registryId/$recordId',
+    path: '/anchoring/$registryId/$recordId',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const ApiAddressZonePortalAddressKindRoute =
   ApiAddressZonePortalAddressKindRouteImport.update({
     id: '/$kind',
@@ -276,8 +296,10 @@ export interface FileRoutesByFullPath {
   '/token/$address': typeof LayoutTokenAddressRoute
   '/tx/$hash': typeof LayoutTxHashRoute
   '/api/abi/batch': typeof ApiAbiBatchRoute
+  '/anchoring/': typeof LayoutAnchoringIndexRoute
   '/demo/': typeof LayoutDemoIndexRoute
   '/dex/': typeof LayoutDexIndexRoute
+  '/anchoring/$registryId/$recordId': typeof LayoutAnchoringRegistryIdRecordIdRoute
   '/block/countdown/$targetBlock': typeof LayoutBlockCountdownTargetBlockRoute
   '/dex/$from/$to': typeof LayoutDexFromToRoute
   '/api/address/balances/$address': typeof ApiAddressBalancesAddressRoute
@@ -289,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/api/token/logo/$address': typeof ApiTokenLogoAddressRoute
   '/api/tx/balance-changes/$hash': typeof ApiTxBalanceChangesHashRoute
   '/api/tx/trace/$hash': typeof ApiTxTraceHashRoute
+  '/anchoring/$registryId/': typeof LayoutAnchoringRegistryIdIndexRoute
   '/api/address/zone-portal/$address/$kind': typeof ApiAddressZonePortalAddressKindRoute
 }
 export interface FileRoutesByTo {
@@ -316,8 +339,10 @@ export interface FileRoutesByTo {
   '/token/$address': typeof LayoutTokenAddressRoute
   '/tx/$hash': typeof LayoutTxHashRoute
   '/api/abi/batch': typeof ApiAbiBatchRoute
+  '/anchoring': typeof LayoutAnchoringIndexRoute
   '/demo': typeof LayoutDemoIndexRoute
   '/dex': typeof LayoutDexIndexRoute
+  '/anchoring/$registryId/$recordId': typeof LayoutAnchoringRegistryIdRecordIdRoute
   '/block/countdown/$targetBlock': typeof LayoutBlockCountdownTargetBlockRoute
   '/dex/$from/$to': typeof LayoutDexFromToRoute
   '/api/address/balances/$address': typeof ApiAddressBalancesAddressRoute
@@ -329,6 +354,7 @@ export interface FileRoutesByTo {
   '/api/token/logo/$address': typeof ApiTokenLogoAddressRoute
   '/api/tx/balance-changes/$hash': typeof ApiTxBalanceChangesHashRoute
   '/api/tx/trace/$hash': typeof ApiTxTraceHashRoute
+  '/anchoring/$registryId': typeof LayoutAnchoringRegistryIdIndexRoute
   '/api/address/zone-portal/$address/$kind': typeof ApiAddressZonePortalAddressKindRoute
 }
 export interface FileRoutesById {
@@ -358,8 +384,10 @@ export interface FileRoutesById {
   '/_layout/token/$address': typeof LayoutTokenAddressRoute
   '/_layout/tx/$hash': typeof LayoutTxHashRoute
   '/api/abi/batch': typeof ApiAbiBatchRoute
+  '/_layout/anchoring/': typeof LayoutAnchoringIndexRoute
   '/_layout/demo/': typeof LayoutDemoIndexRoute
   '/_layout/dex/': typeof LayoutDexIndexRoute
+  '/_layout/anchoring/$registryId/$recordId': typeof LayoutAnchoringRegistryIdRecordIdRoute
   '/_layout/block/countdown/$targetBlock': typeof LayoutBlockCountdownTargetBlockRoute
   '/_layout/dex/$from/$to': typeof LayoutDexFromToRoute
   '/api/address/balances/$address': typeof ApiAddressBalancesAddressRoute
@@ -371,6 +399,7 @@ export interface FileRoutesById {
   '/api/token/logo/$address': typeof ApiTokenLogoAddressRoute
   '/api/tx/balance-changes/$hash': typeof ApiTxBalanceChangesHashRoute
   '/api/tx/trace/$hash': typeof ApiTxTraceHashRoute
+  '/_layout/anchoring/$registryId/': typeof LayoutAnchoringRegistryIdIndexRoute
   '/api/address/zone-portal/$address/$kind': typeof ApiAddressZonePortalAddressKindRoute
 }
 export interface FileRouteTypes {
@@ -400,8 +429,10 @@ export interface FileRouteTypes {
     | '/token/$address'
     | '/tx/$hash'
     | '/api/abi/batch'
+    | '/anchoring/'
     | '/demo/'
     | '/dex/'
+    | '/anchoring/$registryId/$recordId'
     | '/block/countdown/$targetBlock'
     | '/dex/$from/$to'
     | '/api/address/balances/$address'
@@ -413,6 +444,7 @@ export interface FileRouteTypes {
     | '/api/token/logo/$address'
     | '/api/tx/balance-changes/$hash'
     | '/api/tx/trace/$hash'
+    | '/anchoring/$registryId/'
     | '/api/address/zone-portal/$address/$kind'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -440,8 +472,10 @@ export interface FileRouteTypes {
     | '/token/$address'
     | '/tx/$hash'
     | '/api/abi/batch'
+    | '/anchoring'
     | '/demo'
     | '/dex'
+    | '/anchoring/$registryId/$recordId'
     | '/block/countdown/$targetBlock'
     | '/dex/$from/$to'
     | '/api/address/balances/$address'
@@ -453,6 +487,7 @@ export interface FileRouteTypes {
     | '/api/token/logo/$address'
     | '/api/tx/balance-changes/$hash'
     | '/api/tx/trace/$hash'
+    | '/anchoring/$registryId'
     | '/api/address/zone-portal/$address/$kind'
   id:
     | '__root__'
@@ -481,8 +516,10 @@ export interface FileRouteTypes {
     | '/_layout/token/$address'
     | '/_layout/tx/$hash'
     | '/api/abi/batch'
+    | '/_layout/anchoring/'
     | '/_layout/demo/'
     | '/_layout/dex/'
+    | '/_layout/anchoring/$registryId/$recordId'
     | '/_layout/block/countdown/$targetBlock'
     | '/_layout/dex/$from/$to'
     | '/api/address/balances/$address'
@@ -494,6 +531,7 @@ export interface FileRouteTypes {
     | '/api/token/logo/$address'
     | '/api/tx/balance-changes/$hash'
     | '/api/tx/trace/$hash'
+    | '/_layout/anchoring/$registryId/'
     | '/api/address/zone-portal/$address/$kind'
   fileRoutesById: FileRoutesById
 }
@@ -633,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutDemoIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/anchoring/': {
+      id: '/_layout/anchoring/'
+      path: '/anchoring'
+      fullPath: '/anchoring/'
+      preLoaderRoute: typeof LayoutAnchoringIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/api/abi/batch': {
       id: '/api/abi/batch'
       path: '/api/abi/batch'
@@ -708,6 +753,13 @@ declare module '@tanstack/react-router' {
       path: '/address/$address'
       fullPath: '/address/$address'
       preLoaderRoute: typeof LayoutAddressAddressRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/anchoring/$registryId/': {
+      id: '/_layout/anchoring/$registryId/'
+      path: '/anchoring/$registryId'
+      fullPath: '/anchoring/$registryId/'
+      preLoaderRoute: typeof LayoutAnchoringRegistryIdIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/api/tx/trace/$hash': {
@@ -787,6 +839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutBlockCountdownTargetBlockRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/anchoring/$registryId/$recordId': {
+      id: '/_layout/anchoring/$registryId/$recordId'
+      path: '/anchoring/$registryId/$recordId'
+      fullPath: '/anchoring/$registryId/$recordId'
+      preLoaderRoute: typeof LayoutAnchoringRegistryIdRecordIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/api/address/zone-portal/$address/$kind': {
       id: '/api/address/zone-portal/$address/$kind'
       path: '/$kind'
@@ -813,10 +872,13 @@ interface LayoutRouteChildren {
   LayoutReceiptHashRoute: typeof LayoutReceiptHashRoute
   LayoutTokenAddressRoute: typeof LayoutTokenAddressRoute
   LayoutTxHashRoute: typeof LayoutTxHashRoute
+  LayoutAnchoringIndexRoute: typeof LayoutAnchoringIndexRoute
   LayoutDemoIndexRoute: typeof LayoutDemoIndexRoute
   LayoutDexIndexRoute: typeof LayoutDexIndexRoute
+  LayoutAnchoringRegistryIdRecordIdRoute: typeof LayoutAnchoringRegistryIdRecordIdRoute
   LayoutBlockCountdownTargetBlockRoute: typeof LayoutBlockCountdownTargetBlockRoute
   LayoutDexFromToRoute: typeof LayoutDexFromToRoute
+  LayoutAnchoringRegistryIdIndexRoute: typeof LayoutAnchoringRegistryIdIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -835,10 +897,14 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutReceiptHashRoute: LayoutReceiptHashRoute,
   LayoutTokenAddressRoute: LayoutTokenAddressRoute,
   LayoutTxHashRoute: LayoutTxHashRoute,
+  LayoutAnchoringIndexRoute: LayoutAnchoringIndexRoute,
   LayoutDemoIndexRoute: LayoutDemoIndexRoute,
   LayoutDexIndexRoute: LayoutDexIndexRoute,
+  LayoutAnchoringRegistryIdRecordIdRoute:
+    LayoutAnchoringRegistryIdRecordIdRoute,
   LayoutBlockCountdownTargetBlockRoute: LayoutBlockCountdownTargetBlockRoute,
   LayoutDexFromToRoute: LayoutDexFromToRoute,
+  LayoutAnchoringRegistryIdIndexRoute: LayoutAnchoringRegistryIdIndexRoute,
 }
 
 const LayoutRouteWithChildren =

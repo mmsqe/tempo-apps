@@ -181,6 +181,27 @@ export const docs = {
 			limit: 'Members per page.',
 		},
 	},
+	'/anchoring/': {
+		title: 'Anchoring',
+		description:
+			'Registries of the anchoring contract at 0x…0a00, newest first, read from the chain.',
+		params: {
+			q: 'A registry id, a registry name or part of one (on a node running the name index), or a record checksum.',
+			page: 'Page of registries.',
+		},
+	},
+	'/anchoring/$registryId/': {
+		title: 'Anchoring registry',
+		description:
+			'An anchoring registry, the latest version of each of its records, and its latest transactions, newest first.',
+		params: { page: 'Page of records.' },
+	},
+	'/anchoring/$registryId/$recordId': {
+		title: 'Anchoring record',
+		description:
+			'An anchored record: its checksum and every version, newest first.',
+		params: { page: 'Page of versions.' },
+	},
 	'/simulate': {
 		title: 'Simulate',
 		description:
