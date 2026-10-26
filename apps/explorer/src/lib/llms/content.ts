@@ -126,6 +126,12 @@ export const docs = {
 			live: 'Follow new blocks (`true`) or pause the list (`false`).',
 		},
 	},
+	'/txs': {
+		title: 'Transactions',
+		description:
+			'Every indexed transaction, newest first: hash, block, method, sender, recipient, and time. Failed ones are marked.',
+		params: { page: 'Page number, 25 transactions per page.' },
+	},
 	'/block/$id': {
 		title: 'Block',
 		description:
