@@ -90,7 +90,7 @@ export namespace Header {
 						return
 					}
 					if (type === 'hash') {
-						navigate({ to: '/receipt/$hash', params: { hash: value } })
+						navigate({ to: '/tx/$hash', params: { hash: value } })
 						return
 					}
 					if (type === 'token') {
@@ -121,7 +121,7 @@ export namespace Header {
 								return
 							}
 							if (type === 'hash') {
-								navigate({ to: '/receipt/$hash', params: { hash: value } })
+								navigate({ to: '/tx/$hash', params: { hash: value } })
 								return
 							}
 							if (type === 'token') {
@@ -156,7 +156,7 @@ export namespace Header {
 								return
 							}
 							if (type === 'hash') {
-								navigate({ to: '/receipt/$hash', params: { hash: value } })
+								navigate({ to: '/tx/$hash', params: { hash: value } })
 								return
 							}
 							if (type === 'token') {

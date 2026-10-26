@@ -1897,7 +1897,7 @@ function SectionsWrapper(props: {
 										<TimestampCell
 											key="time"
 											timestamp={BigInt(deposit.timestamp)}
-											link={`/receipt/${deposit.transactionHash}`}
+											link={`/tx/${deposit.transactionHash}`}
 											format={timeFormat}
 										/>,
 										<Amount
@@ -1921,8 +1921,8 @@ function SectionsWrapper(props: {
 										/>,
 									],
 									link: {
-										href: `/receipt/${deposit.transactionHash}`,
-										title: `View receipt ${deposit.transactionHash}`,
+										href: `/tx/${deposit.transactionHash}`,
+										title: `View transaction ${deposit.transactionHash}`,
 									},
 								}))
 							}
@@ -1963,7 +1963,7 @@ function SectionsWrapper(props: {
 										<TimestampCell
 											key="time"
 											timestamp={BigInt(withdrawal.timestamp)}
-											link={`/receipt/${withdrawal.transactionHash}`}
+											link={`/tx/${withdrawal.transactionHash}`}
 											format={timeFormat}
 										/>,
 										<Amount
@@ -1987,8 +1987,8 @@ function SectionsWrapper(props: {
 										/>,
 									],
 									link: {
-										href: `/receipt/${withdrawal.transactionHash}`,
-										title: `View receipt ${withdrawal.transactionHash}`,
+										href: `/tx/${withdrawal.transactionHash}`,
+										title: `View transaction ${withdrawal.transactionHash}`,
 									},
 								}))
 							}
@@ -2037,7 +2037,7 @@ function SectionsWrapper(props: {
 										<TimestampCell
 											key="time"
 											timestamp={BigInt(batch.timestamp)}
-											link={`/receipt/${batch.transactionHash}`}
+											link={`/tx/${batch.transactionHash}`}
 											format={timeFormat}
 										/>,
 										<span key="deposit" className="copy-13 text-primary">
@@ -2052,8 +2052,8 @@ function SectionsWrapper(props: {
 										</span>,
 									],
 									link: {
-										href: `/receipt/${batch.transactionHash}`,
-										title: `View receipt ${batch.transactionHash}`,
+										href: `/tx/${batch.transactionHash}`,
+										title: `View transaction ${batch.transactionHash}`,
 									},
 								}))
 							}
@@ -2133,8 +2133,8 @@ function SectionsWrapper(props: {
 											/>,
 										],
 										link: {
-											href: `/receipt/${transaction.hash}`,
-											title: `View receipt ${transaction.hash}`,
+											href: `/tx/${transaction.hash}`,
+											title: `View transaction ${transaction.hash}`,
 										},
 										expanded: isVoucherMatch ? (
 											<StreamedPaymentReceipt
@@ -2358,7 +2358,7 @@ function SectionsWrapper(props: {
 													<TimestampCell
 														key="time"
 														timestamp={timestamp}
-														link={`/receipt/${transfer.transactionHash}`}
+														link={`/tx/${transfer.transactionHash}`}
 														format={timeFormat}
 													/>,
 													<TransactionCell
@@ -2405,8 +2405,8 @@ function SectionsWrapper(props: {
 													/>,
 												],
 												link: {
-													href: `/receipt/${transfer.transactionHash}`,
-													title: `View receipt ${transfer.transactionHash}`,
+													href: `/tx/${transfer.transactionHash}`,
+													title: `View transaction ${transfer.transactionHash}`,
 												},
 											}
 										},
@@ -2462,7 +2462,7 @@ function SectionsWrapper(props: {
 										<TimestampCell
 											key="time"
 											timestamp={timestamp}
-											link={`/receipt/${transfer.transactionHash}`}
+											link={`/tx/${transfer.transactionHash}`}
 											format={timeFormat}
 										/>,
 										<TransactionCell
@@ -2490,8 +2490,8 @@ function SectionsWrapper(props: {
 										/>,
 									],
 									link: {
-										href: `/receipt/${transfer.transactionHash}`,
-										title: `View receipt ${transfer.transactionHash}`,
+										href: `/tx/${transfer.transactionHash}`,
+										title: `View transaction ${transfer.transactionHash}`,
 									},
 								}))
 							}}
@@ -2678,7 +2678,7 @@ function ProcessedInBatchCell(
 		<span className="whitespace-nowrap copy-13">
 			Checkpoint{' '}
 			<Link
-				to="/receipt/$hash"
+				to="/tx/$hash"
 				params={{ hash: props.batch.transactionHash }}
 				preload="intent"
 				className="text-accent transition-colors hover:text-accent/80 press-down"
@@ -2697,7 +2697,7 @@ function LinkedTransactionHash(
 ): React.JSX.Element {
 	return (
 		<Link
-			to="/receipt/$hash"
+			to="/tx/$hash"
 			params={{ hash: props.hash }}
 			preload="intent"
 			className={cx(
@@ -2727,7 +2727,7 @@ function TransactionTimeCell(props: {
 	return (
 		<TransactionTimestamp
 			timestamp={BigInt(safeTimestamp)}
-			link={`/receipt/${hash}`}
+			link={`/tx/${hash}`}
 			format={format}
 		/>
 	)

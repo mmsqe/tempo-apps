@@ -353,7 +353,7 @@ function WriteContractFunction(props: {
 							<p className="label-12 text-positive font-mono break-all">
 								tx:{' '}
 								<Link
-									to="/receipt/$hash"
+									to="/tx/$hash"
 									params={{ hash: writeContract.data }}
 									className="underline hover:text-positive"
 								>
