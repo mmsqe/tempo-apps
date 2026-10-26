@@ -218,7 +218,7 @@ function RouteComponent() {
 		...blockKnownEventsQueryOptions(block.number ?? 0n, transactions, page),
 		enabled: !!block.number && transactions.length > 0,
 	})
-	const { data: knownEventsByHash, isLoading: knownEventsLoading } =
+	const { data: receiptDetails, isLoading: knownEventsLoading } =
 		knownEventsQuery
 
 	const isMobile = useMediaQuery('(max-width: 799px)')
@@ -246,7 +246,8 @@ function RouteComponent() {
 						content: (
 							<TransactionsSection
 								transactions={transactions}
-								knownEventsByHash={knownEventsByHash ?? {}}
+								knownEventsByHash={receiptDetails?.knownEvents ?? {}}
+								feesByHash={receiptDetails?.fees ?? {}}
 								knownEventsLoading={knownEventsLoading}
 								decimals={decimals}
 								symbol={symbol}
@@ -297,6 +298,7 @@ function TransactionsSection(props: TransactionsSectionProps) {
 	const {
 		transactions,
 		knownEventsByHash,
+		feesByHash,
 		knownEventsLoading,
 		decimals,
 		symbol,
@@ -333,7 +335,9 @@ function TransactionsSection(props: TransactionsSectionProps) {
 						? knownEventsByHash[transaction.hash]
 						: undefined
 
-					const fee = getEstimatedFee(transaction)
+					const fee = transaction.hash
+						? feesByHash[transaction.hash]
+						: undefined
 					const feeValue = fee ? Number(Value.format(fee, GAS_DECIMALS)) : 0
 					const feeRaw = fee ? Value.format(fee, GAS_DECIMALS) : '0'
 					const feeDisplay =
@@ -341,7 +345,9 @@ function TransactionsSection(props: TransactionsSectionProps) {
 							? showUsdPrefix
 								? PriceFormatter.format(feeValue)
 								: PriceFormatter.formatAmountShort(feeRaw)
-							: '—'
+							: knownEventsLoading
+								? '…'
+								: '—'
 
 					const txValue = transaction.value ?? 0n
 					const amountDisplay = PriceFormatter.formatNativeAmount(
@@ -399,6 +405,7 @@ function TransactionsSection(props: TransactionsSectionProps) {
 								key="total"
 								transaction={transaction}
 								knownEvents={knownEvents}
+								fee={fee}
 								loading={knownEventsLoading}
 							/>,
 						],
@@ -421,7 +428,7 @@ function TransactionsSection(props: TransactionsSectionProps) {
 }
 
 function TransactionTotalCell(props: TransactionTotalCellProps) {
-	const { transaction, knownEvents, loading } = props
+	const { transaction, knownEvents, fee: paid = 0n, loading } = props
 	const { isTokenListed } = useTokenListMembership()
 
 	const events = React.useMemo(
@@ -457,7 +464,7 @@ function TransactionTotalCell(props: TransactionTotalCellProps) {
 		event.parts.some((part) => part.type === 'amount'),
 	)
 	const hasFeeEvent = events?.some((event) => event.type === 'fee') ?? false
-	const fee = hasFeeEvent ? 0n : getEstimatedFee(transaction)
+	const fee = hasFeeEvent ? 0n : paid
 
 	if (hasAmounts) {
 		const eventTotal = calculateKnownEventsTotal(events ?? [])
@@ -499,12 +506,14 @@ function TransactionTotalCell(props: TransactionTotalCellProps) {
 interface TransactionTotalCellProps {
 	transaction: BlockTransaction
 	knownEvents?: KnownEvent[]
+	fee?: bigint | undefined
 	loading?: boolean
 }
 
 interface TransactionsSectionProps {
 	transactions: BlockTransaction[]
 	knownEventsByHash: Record<string, KnownEvent[]>
+	feesByHash: Record<string, bigint>
 	knownEventsLoading: boolean
 	decimals: number
 	symbol: string
@@ -606,13 +615,4 @@ interface TransactionDescriptionProps {
 	amountDisplay: string
 	knownEvents?: KnownEvent[]
 	loading?: boolean
-}
-
-function getEstimatedFee(transaction: BlockTransaction) {
-	const gasPrice =
-		transaction.gasPrice ??
-		('maxFeePerGas' in transaction && transaction.maxFeePerGas
-			? transaction.maxFeePerGas
-			: 0n)
-	return gasPrice * (transaction.gas ?? 0n)
 }
