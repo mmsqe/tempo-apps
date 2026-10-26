@@ -28,15 +28,16 @@ export const tempoDevnet = tempoDevnet_.extend({
 })
 
 /**
- * The devnet chain the app connects with: viem's, without its public
- * WebSocket when the build points at another devnet's RPC
- * (`VITE_DEVNET_RPC_OVERRIDDEN`), so the head is polled through `/api/rpc`.
+ * The devnet chain the app connects with: viem's, or, for a build on another
+ * devnet's RPC (`VITE_DEVNET_RPC_OVERRIDDEN`), that RPC alone, with no
+ * WebSocket (the head is polled through `/api/rpc`) and no Tempo explorer.
  */
 export const connectedTempoDevnet =
 	import.meta.env.VITE_DEVNET_RPC_OVERRIDDEN === 'true'
 		? {
 				...tempoDevnet_,
-				rpcUrls: { default: { http: tempoDevnet_.rpcUrls.default.http } },
+				rpcUrls: { default: { http: [import.meta.env.DEVNET_RPC_URL ?? ''] } },
+				blockExplorers: undefined,
 			}
 		: tempoDevnet_
 

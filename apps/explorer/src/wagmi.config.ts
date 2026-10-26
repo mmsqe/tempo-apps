@@ -11,7 +11,7 @@ import {
 	tempoTestnet,
 	tempoZoneProver,
 } from './lib/chains'
-import { getApiUrl, getTempoEnv } from './lib/env'
+import { getApiUrl, getTempoEnv, ownBackends } from './lib/env'
 import { getExplorerRpcBackend } from './lib/server/network'
 import {
 	cookieStorage,
@@ -78,7 +78,7 @@ export function getWagmiConfig() {
 		ssr: true,
 		multiInjectedProviderDiscovery: true,
 		chains: [chain, tempoLocalnet],
-		connectors: [tempoWallet()],
+		connectors: ownBackends ? [] : [tempoWallet()],
 		storage: createStorage({ storage: cookieStorage }),
 		transports: {
 			[chain.id]: transport,

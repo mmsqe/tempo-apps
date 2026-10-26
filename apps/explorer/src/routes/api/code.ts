@@ -10,7 +10,9 @@ import {
 import { zAddress } from '#lib/zod.ts'
 import { getRequestURL, clientEnv } from '#lib/env.ts'
 
-const CONTRACT_VERIFICATION_API_BASE_URL = `${clientEnv.CONTRACT_VERIFICATION_API_BASE_URL}/v2/contract`
+const CONTRACT_VERIFICATION_API_BASE_URL =
+	clientEnv.CONTRACT_VERIFICATION_API_BASE_URL &&
+	`${clientEnv.CONTRACT_VERIFICATION_API_BASE_URL}/v2/contract`
 
 const CONTRACT_SOURCE_FIELDS = [
 	'stdJsonInput',
@@ -143,6 +145,11 @@ export const Route = createFileRoute('/api/code')({
 						{ status: 400 },
 					)
 
+				if (!CONTRACT_VERIFICATION_API_BASE_URL)
+					return Response.json(
+						{ error: 'No contract verification service' },
+						{ status: 404 },
+					)
 				const apiUrl = new URL(
 					`${CONTRACT_VERIFICATION_API_BASE_URL}/${parsedSearchParams.chainid}/${parsedSearchParams.address.toLowerCase()}`,
 				)

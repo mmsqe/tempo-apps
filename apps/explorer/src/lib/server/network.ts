@@ -3,7 +3,7 @@ import {
 	ZONE_PROVER_RPC_URL,
 	ZONE_PROVER_TIDX_URL,
 } from '#lib/zone-prover'
-import { devnetUrls, serverEnv } from './env'
+import { devnetUrls, serverEnv, tempoApi } from './env'
 
 const DEVNET_CHAIN_ID = 31318
 
@@ -61,6 +61,17 @@ export function getChainBackend(chainId: number, kind: 'rpc' | 'tidx') {
 		url: kind === 'rpc' ? ZONE_PROVER_RPC_URL : ZONE_PROVER_TIDX_URL,
 		headers: { Authorization: authorization },
 	}
+}
+
+/** Where `chainId`'s indexer SQL goes: the chain's own tidx, else the Tempo API's. */
+export function getIndexerBackend(chainId: number): {
+	url: string
+	headers?: Record<string, string> | undefined
+} {
+	const own = getChainBackend(chainId, 'tidx')
+	if (own) return own
+	if (!tempoApi) throw new Error(`Chain ${chainId} has no indexer`)
+	return { url: `${tempoApi.url}/v1/indexer`, headers: tempoApi.headers }
 }
 
 /**

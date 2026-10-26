@@ -60,7 +60,10 @@ const instrumentedFetch: typeof fetch = async (input, init) => {
  * `DEVNET_API_URL` calls that API without it (see `resolveTempoApi`).
  */
 export const api = create({
-	fetch: instrumentedFetch,
-	headers: tempoApi.headers,
-	url: tempoApi.url,
+	// Without an API each call fails before it leaves; `.invalid` never resolves.
+	fetch: tempoApi
+		? instrumentedFetch
+		: () => Promise.reject(new Error('This build calls no Tempo API')),
+	headers: tempoApi?.headers,
+	url: tempoApi?.url ?? 'https://tempo-api.invalid',
 })

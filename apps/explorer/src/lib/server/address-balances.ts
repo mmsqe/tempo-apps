@@ -6,8 +6,10 @@ import { getChainId } from 'wagmi/actions'
 import * as z from 'zod/mini'
 
 import type { BalancesResponse, TokenBalance } from '#lib/address-balances'
-import { tempoApi, tempoApiUrl } from '#lib/server/env'
+import { indexer } from '#lib/server/dex-indexer'
+import { tempoApi } from '#lib/server/env'
 import { api } from '#lib/server/tempo-api'
+import { getTokensMetadata } from '#lib/server/token'
 import { zAddress } from '#lib/zod'
 import { getWagmiConfig } from '#wagmi.config.ts'
 
@@ -98,10 +100,11 @@ async function fetchEarnPositions(params: {
 	chainId: number
 	limit: number
 }): Promise<EarnPosition[]> {
+	if (!tempoApi) return []
 	try {
 		const url = new URL(
 			`/v1/earn/addresses/${params.address}/positions`,
-			tempoApiUrl,
+			tempoApi.url,
 		)
 		url.searchParams.set('chainId', String(params.chainId))
 		url.searchParams.set('limit', String(params.limit))
@@ -125,6 +128,31 @@ export async function fetchAddressBalancesData(params: {
 }): Promise<BalancesResponse> {
 	const { address, chainId } = params
 	const maxTokens = params.maxTokens ?? MAX_TOKENS
+
+	// Without an API: balances from the build's own tidx, token details from the node.
+	if (!tempoApi) {
+		const rows = await indexer(
+			chainId,
+			`SELECT token, toString(balance) AS balance FROM address_balances
+			WHERE holder = '${address.toLowerCase()}' ORDER BY balance DESC LIMIT ${maxTokens}`,
+		)
+		const metadata = await getTokensMetadata(
+			rows.map((row) => row.token as Address.Address),
+		)
+		const balances = rows.map((row): TokenBalance => {
+			const token = row.token as Address.Address
+			const details = metadata.get(token)
+			return {
+				token,
+				balance: String(row.balance),
+				name: details?.name,
+				symbol: details?.symbol,
+				currency: details?.currency,
+				decimals: details?.decimals,
+			}
+		})
+		return { balances: sortBalances(balances) }
+	}
 
 	const [{ data }, earnPositions] = await Promise.all([
 		parseResponse(

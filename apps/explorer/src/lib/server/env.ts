@@ -50,12 +50,14 @@ export type DevnetUrls = {
  *
  * A `devnet` build with `DEVNET_API_URL` calls that API instead. It never
  * receives the production `TEMPO_API_KEY`; Cloudflare Access service-token
- * headers are sent when both `DEVNET_API_ACCESS_*` values are set.
+ * headers are sent when both `DEVNET_API_ACCESS_*` values are set. One pointed
+ * at its own node or tidx without an API calls none: the hosted API describes
+ * another chain.
  */
 export function resolveTempoApi(
-	env: ServerEnv & Pick<DevnetUrls, 'DEVNET_API_URL'>,
+	env: ServerEnv & DevnetUrls,
 	tempoEnv: string | undefined,
-): resolveTempoApi.ReturnType {
+): resolveTempoApi.ReturnType | undefined {
 	if (tempoEnv === 'devnet' && env.DEVNET_API_URL)
 		return {
 			url: env.DEVNET_API_URL.replace(/\/+$/, ''),
@@ -67,6 +69,8 @@ export function resolveTempoApi(
 						}
 					: undefined,
 		}
+	if (tempoEnv === 'devnet' && (env.DEVNET_RPC_URL || env.DEVNET_TIDX_URL))
+		return undefined
 	return {
 		url: 'https://api.tempo.xyz',
 		headers: env.TEMPO_API_KEY
@@ -83,9 +87,6 @@ export declare namespace resolveTempoApi {
 }
 
 export const tempoApi = resolveTempoApi(
-	{ ...serverEnv, DEVNET_API_URL: devnetUrls.DEVNET_API_URL },
+	{ ...serverEnv, ...devnetUrls },
 	import.meta.env.VITE_TEMPO_ENV,
 )
-
-/** Base URL for the Tempo API. */
-export const tempoApiUrl = tempoApi.url

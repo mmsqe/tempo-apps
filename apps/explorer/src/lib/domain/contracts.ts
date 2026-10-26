@@ -1083,8 +1083,10 @@ export class TempoABILoader {
 	}
 
 	async loadABI(address: string): Promise<unknown[]> {
+		const base = clientEnv.CONTRACT_VERIFICATION_API_BASE_URL
+		if (!base) return []
 		try {
-			const url = `${clientEnv.CONTRACT_VERIFICATION_API_BASE_URL}/v2/contract/${this.chainId}/${address.toLowerCase()}?fields=abi`
+			const url = `${base}/v2/contract/${this.chainId}/${address.toLowerCase()}?fields=abi`
 			const response = await fetch(url)
 			if (!response.ok) return []
 			const data = (await response.json()) as { abi?: unknown[] }

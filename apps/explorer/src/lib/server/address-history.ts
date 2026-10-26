@@ -22,10 +22,12 @@ import {
 	selectTransactionDescriptionEvents,
 	type TransactionActivity,
 } from '#lib/domain/transaction-activities'
+import { indexer, sqlTime } from '#lib/server/dex-indexer'
+import { tempoApi } from '#lib/server/env'
 import { api } from '#lib/server/tempo-api'
 import { getTransactionActivities } from '#lib/server/transaction-activities'
 import { parseTimestamp } from '#lib/timestamp'
-import { getWagmiConfig } from '#wagmi.config'
+import { getBatchedClient, getWagmiConfig } from '#wagmi.config'
 import { zonePortalAbi } from '#lib/abis'
 import { isZonePortalAddress } from '#lib/domain/zones'
 
@@ -179,6 +181,106 @@ function transactionCursor(row: TransactionRow): string {
 	)
 }
 
+/** The `[block, index]` a history cursor continues from. */
+function parseHistoryCursor(cursor: string): [number, number] {
+	const parsed: unknown = JSON.parse(atob(cursor))
+	const position = (value: unknown): value is number =>
+		typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+	const [block, index] =
+		Array.isArray(parsed) && parsed.length === 2 ? parsed : []
+	if (!position(block) || !position(index))
+		throw new Error('Invalid history cursor')
+	return [block, index]
+}
+
+/** A page from the build's own tidx: tidx pages and counts, the node supplies each receipt. */
+async function fetchIndexedHistoryPage(
+	address: Address.Address,
+	chainId: number,
+	searchParams: HistoryRequestParameters,
+	limit: number,
+	includeTotal: boolean,
+) {
+	Address.assert(address)
+	const account = address.toLowerCase()
+	const direction = searchParams.sort === 'asc' ? 'ASC' : 'DESC'
+	// The same side of a transaction's receipt, to restrict a status filter before it joins.
+	const side = (table: string) =>
+		searchParams.include === 'sent'
+			? `${table}."from" = '${account}'`
+			: searchParams.include === 'received'
+				? `${table}."to" = '${account}'`
+				: `(${table}."from" = '${account}' OR ${table}."to" = '${account}')`
+	const filters = [side('t')]
+	if (searchParams.status)
+		filters.push(
+			`t.hash IN (SELECT r.tx_hash FROM receipts AS r WHERE ${side('r')} AND r.status = ${searchParams.status === 'success' ? 1 : 0})`,
+		)
+	if (searchParams.after !== undefined)
+		filters.push(`t.block_timestamp >= '${sqlTime(searchParams.after * 1000)}'`)
+	const paged = [...filters]
+	if (searchParams.cursor) {
+		const [block, index] = parseHistoryCursor(searchParams.cursor)
+		paged.push(
+			`(t.block_num, t.idx) ${direction === 'ASC' ? '>' : '<'} (${block}, ${index})`,
+		)
+	}
+	const [rows, counted] = await Promise.all([
+		indexer(
+			chainId,
+			`SELECT t.hash, t.block_num, t.idx, toUnixTimestamp(t.block_timestamp) AS timestamp,
+				t."from", t."to", t.value, t.input
+			FROM txs AS t WHERE ${paged.join(' AND ')}
+			ORDER BY t.block_num ${direction}, t.idx ${direction} LIMIT ${limit + 1}`,
+		),
+		includeTotal
+			? indexer(
+					chainId,
+					`SELECT count() AS n FROM txs AS t WHERE ${filters.join(' AND ')}`,
+				)
+			: undefined,
+	])
+	const client = getBatchedClient()
+	const data = await Promise.all(
+		rows.slice(0, limit).map(async (row) => {
+			const receipt = await client.getTransactionReceipt({
+				hash: row.hash as Hex.Hex,
+			})
+			// The fields `toEnrichedTransaction` reads, as the Tempo API names them.
+			return {
+				hash: row.hash,
+				blockNumber: String(row.block_num),
+				transactionIndex: Number(row.idx),
+				timestamp: row.timestamp,
+				sender: row.from,
+				recipient: row.to,
+				value: row.value,
+				input: row.input,
+				meta: {
+					receipt: {
+						status: receipt.status,
+						sender: receipt.from,
+						gasUsed: receipt.gasUsed,
+						effectiveGasPrice: receipt.effectiveGasPrice,
+						contractAddress: receipt.contractAddress,
+						logs: receipt.logs,
+					},
+				},
+			} as unknown as TransactionRow
+		}),
+	)
+	const last = data.at(-1)
+	return {
+		data,
+		meta: counted && {
+			totalCount: Number(counted[0]?.n),
+			totalCountCapped: false,
+		},
+		nextCursor: rows.length > limit && last ? transactionCursor(last) : null,
+		reverseCursor: data[0] ? transactionCursor(data[0]) : null,
+	}
+}
+
 async function fetchFilteredHistoryPage(
 	address: Address.Address,
 	chainId: number,
@@ -203,20 +305,9 @@ async function fetchFilteredHistoryPage(
 		`empty(extractAll(lower(ifNull(t.calls, '')), '${callDestination}[^{}]*${callInput}|${callInput}[^{}]*${callDestination}'))`,
 	]
 	if (searchParams.cursor) {
-		const cursor: unknown = JSON.parse(atob(searchParams.cursor))
-		if (
-			!Array.isArray(cursor) ||
-			cursor.length !== 2 ||
-			!cursor.every(
-				(value) =>
-					typeof value === 'number' &&
-					Number.isSafeInteger(value) &&
-					value >= 0,
-			)
-		)
-			throw new Error('Invalid history cursor')
+		const [block, index] = parseHistoryCursor(searchParams.cursor)
 		filters.push(
-			`(t.block_num, t.idx) ${direction === 'ASC' ? '>' : '<'} (${cursor[0]}, ${cursor[1]})`,
+			`(t.block_num, t.idx) ${direction === 'ASC' ? '>' : '<'} (${block}, ${index})`,
 		)
 	}
 	if (searchParams.after !== undefined)
@@ -438,18 +529,26 @@ export async function fetchAddressHistoryData(params: {
 		cachedTotal === undefined
 	const resultPromise = hideSubmitBatches
 		? fetchFilteredHistoryPage(address, chainId, searchParams, limit)
-		: parseResponse(
-				api.v1.transactions.$get({
-					query: {
-						chainId: String(chainId),
-						...filters,
-						order: searchParams.sort,
-						limit: String(limit),
-						...(searchParams.cursor ? { cursor: searchParams.cursor } : {}),
-						include: includeTotal ? 'receipt,totalCount' : 'receipt',
-					},
-				}),
-			)
+		: !tempoApi
+			? fetchIndexedHistoryPage(
+					address,
+					chainId,
+					searchParams,
+					limit,
+					includeTotal,
+				)
+			: parseResponse(
+					api.v1.transactions.$get({
+						query: {
+							chainId: String(chainId),
+							...filters,
+							order: searchParams.sort,
+							limit: String(limit),
+							...(searchParams.cursor ? { cursor: searchParams.cursor } : {}),
+							include: includeTotal ? 'receipt,totalCount' : 'receipt',
+						},
+					}),
+				)
 	const requestedTotal = includeTotal
 		? resultPromise
 				.then((result) =>

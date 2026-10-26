@@ -8,7 +8,7 @@ import * as React from 'react'
 import { ExploreInput } from '#comps/ExploreInput'
 import { useAnimatedBlockNumber, useLiveBlockNumber } from '#lib/block-number'
 import { cx } from '#lib/css'
-import { type TempoEnv, getTempoEnv, isTestnet } from '#lib/env'
+import { type TempoEnv, getTempoEnv, isTestnet, ownBackends } from '#lib/env'
 import {
 	buildExplorerNetworkHref,
 	EXPLORER_NETWORK_OPTIONS,
@@ -33,7 +33,14 @@ export function Header(): React.JSX.Element {
 					>
 						<Header.TempoWordmark />
 					</Link>
-					<Header.NetworkBadge tempoEnv={tempoEnv} />
+					{ownBackends ? (
+						<span className="flex h-[28px] shrink-0 items-center gap-[5px] rounded-body border border-base-border bg-base-plane px-[8px] py-[4px] label-14 text-secondary">
+							<Header.NetworkStatusDot className="bg-warning" />
+							<span>{getActiveExplorerNetworkOption(tempoEnv).label}</span>
+						</span>
+					) : (
+						<Header.NetworkBadge tempoEnv={tempoEnv} />
+					)}
 				</div>
 				<Header.Search />
 				<div className="relative z-1 print:hidden flex items-center gap-[8px]">

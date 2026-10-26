@@ -9,6 +9,7 @@ import {
 	getChainBackend,
 	getDevnetBackend,
 	getExplorerRpcBackend,
+	getIndexerBackend,
 } from '#lib/server/network'
 
 vi.mock('#lib/server/env', async (importOriginal) => ({
@@ -104,6 +105,19 @@ describe('devnet backend overrides', () => {
 		expect(() => getChainBackend(31318, 'tidx')).toThrow('credentials')
 	})
 
+	it("sends a chain's indexer SQL to its own tidx, else to the API's", () => {
+		devnetUrls.DEVNET_TIDX_URL = 'http://127.0.0.1:8090'
+		serverEnv.DEVNET_TIDX_AUTH = 'Bearer local'
+		vi.stubEnv('VITE_TEMPO_ENV', 'devnet')
+		expect(getIndexerBackend(31318)).toEqual({
+			url: 'http://127.0.0.1:8090',
+			headers: { Authorization: 'Bearer local' },
+		})
+		expect(getIndexerBackend(4217)).toMatchObject({
+			url: 'https://api.tempo.xyz/v1/indexer',
+		})
+	})
+
 	it('fails closed when an override has no valid credentials', () => {
 		devnetUrls.DEVNET_RPC_URL = 'https://rpc-my-stack.devnet.tempoxyz.dev'
 		expect(() => getExplorerRpcBackend('devnet', 'explorer:test')).toThrow(
@@ -124,6 +138,24 @@ describe('resolveTempoApi', () => {
 			url: 'https://api.tempo.xyz',
 			headers: undefined,
 		})
+	})
+
+	it('calls no API from a devnet build on its own node or tidx', () => {
+		const own = { DEVNET_RPC_URL: 'http://127.0.0.1:8547' }
+		expect(resolveTempoApi(own, 'devnet')).toBeUndefined()
+		expect(
+			resolveTempoApi(
+				{ DEVNET_TIDX_URL: 'http://127.0.0.1:8090', TEMPO_API_KEY: 'prod-key' },
+				'devnet',
+			),
+		).toBeUndefined()
+		expect(
+			resolveTempoApi(
+				{ ...own, DEVNET_API_URL: 'http://127.0.0.1:8095' },
+				'devnet',
+			),
+		).toEqual({ url: 'http://127.0.0.1:8095', headers: undefined })
+		expect(resolveTempoApi(own, 'testnet')?.url).toBe('https://api.tempo.xyz')
 	})
 
 	it('never sends the production key to a devnet API override', () => {
@@ -176,13 +208,15 @@ describe('resolveTempoApi', () => {
 })
 
 describe('connected devnet chain', () => {
-	it('polls /api/rpc instead of the default WebSocket when the RPC is overridden', async () => {
+	it('gives wallets its own RPC and no Tempo host when the RPC is overridden', async () => {
 		vi.stubEnv('VITE_DEVNET_RPC_OVERRIDDEN', 'true')
+		vi.stubEnv('DEVNET_RPC_URL', 'http://127.0.0.1:8547')
 		vi.resetModules()
 		const { connectedTempoDevnet } = await import('#lib/chains')
 		expect(connectedTempoDevnet.rpcUrls.default).toEqual({
-			http: ['https://rpc.devnet.tempoxyz.dev'],
+			http: ['http://127.0.0.1:8547'],
 		})
+		expect(connectedTempoDevnet.blockExplorers).toBeUndefined()
 	})
 
 	it("is viem's devnet chain otherwise", async () => {

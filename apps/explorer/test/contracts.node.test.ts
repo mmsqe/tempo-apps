@@ -219,6 +219,10 @@ describe('Tempo ABI lookup', () => {
 			.fn()
 			.mockResolvedValue(Response.json({ match: 'exact_match', abi }))
 		vi.stubGlobal('fetch', fetch)
+		// Whatever a local `.env` sets.
+		vi.stubEnv('VITE_CONTRACT_VERIFICATION_API_BASE_URL', '')
+		vi.resetModules()
+		const { TempoABILoader } = await import('#lib/domain/contracts')
 		const loader = new TempoABILoader({ chainId: 4217 })
 		const result = await loader.loadABI(
 			'0x3B3F2e2aa07460a9ba95ffd06ad9597398Bbbab7',

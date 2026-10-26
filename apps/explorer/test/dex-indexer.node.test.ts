@@ -2,11 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { indexer } from '#lib/server/dex-indexer'
 
 const { backend } = vi.hoisted(() => ({ backend: vi.fn() }))
-vi.mock('#lib/server/env', () => ({
-	tempoApi: { url: 'https://api.test', headers: { 'tempo-api-key': 'key' } },
-	tempoApiUrl: 'https://api.test',
-}))
-vi.mock('#lib/server/network', () => ({ getChainBackend: backend }))
+vi.mock('#lib/server/network', () => ({ getIndexerBackend: backend }))
 vi.mock('#wagmi.config', () => ({ getBatchedClient: () => ({}) }))
 
 afterEach(() => {
@@ -36,8 +32,11 @@ describe('DEX indexer queries', () => {
 		expect(init?.headers).toMatchObject({ Authorization: 'Basic abc' })
 	})
 
-	it('fall back to the Tempo API indexer', async () => {
-		backend.mockReturnValue(undefined)
+	it('use the Tempo API indexer otherwise', async () => {
+		backend.mockReturnValue({
+			url: 'https://api.test/v1/indexer',
+			headers: { 'tempo-api-key': 'key' },
+		})
 		const fetch = respond()
 		await indexer(4217, 'SELECT 1 AS n', 'Event(uint256 a)')
 		const [url, init] = fetch.mock.calls[0] ?? []

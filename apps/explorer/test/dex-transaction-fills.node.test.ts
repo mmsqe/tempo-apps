@@ -10,11 +10,9 @@ const { query, multicall, receipt } = vi.hoisted(() => ({
 	multicall: vi.fn(),
 	receipt: vi.fn(),
 }))
-vi.mock('#lib/server/env', () => ({
-	tempoApi: { url: 'https://api.test', headers: undefined },
-	tempoApiUrl: 'https://api.test',
+vi.mock('#lib/server/network', () => ({
+	getIndexerBackend: () => ({ url: 'https://api.test/v1/indexer' }),
 }))
-vi.mock('#lib/server/network', () => ({ getChainBackend: () => undefined }))
 vi.mock('#lib/server/verified-tokens', () => ({
 	getVerifiedTokenAddresses: async () => new Set([USDC, OUSD, PATH]),
 }))

@@ -9,8 +9,7 @@ import {
 import { Addresses } from 'viem/tempo'
 import { Abis } from '#lib/abis'
 import { append, type DexPoolToken } from '#lib/dex-pools'
-import { tempoApi, tempoApiUrl } from '#lib/server/env'
-import { getChainBackend } from '#lib/server/network'
+import { getIndexerBackend } from '#lib/server/network'
 import { getBatchedClient } from '#wagmi.config'
 
 /** Calls per multicall; see `readContracts`. */
@@ -39,8 +38,8 @@ export async function indexer(
 	sql: string,
 	signature?: string,
 ): Promise<Row[]> {
-	const backend = getChainBackend(chainId, 'tidx')
-	const url = new URL(`${backend?.url ?? `${tempoApiUrl}/v1/indexer`}/query`)
+	const backend = getIndexerBackend(chainId)
+	const url = new URL(`${backend.url}/query`)
 	url.search = new URLSearchParams({
 		sql,
 		chainId: String(chainId),
@@ -48,10 +47,7 @@ export async function indexer(
 		...(signature ? { signature } : {}),
 	}).toString()
 	const response = await fetch(url, {
-		headers: {
-			Accept: 'application/json',
-			...(backend?.headers ?? tempoApi.headers),
-		},
+		headers: { Accept: 'application/json', ...backend.headers },
 	})
 	const result = (await response.json().catch(() => null)) as {
 		ok?: boolean

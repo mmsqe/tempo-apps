@@ -204,9 +204,11 @@ export async function fetchContractSourceDirect(params: {
 }): Promise<ContractSource> {
 	const { address, chainId, signal } = params
 	const { clientEnv } = await import('#lib/env.ts')
+	const base = clientEnv.CONTRACT_VERIFICATION_API_BASE_URL
+	if (!base) throw new Error('No contract verification service')
 
 	const apiUrl = new URL(
-		`${clientEnv.CONTRACT_VERIFICATION_API_BASE_URL}/v2/contract/${chainId}/${address.toLowerCase()}`,
+		`${base}/v2/contract/${chainId}/${address.toLowerCase()}`,
 	)
 	apiUrl.searchParams.set('fields', CONTRACT_SOURCE_FIELDS)
 

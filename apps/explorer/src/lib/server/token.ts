@@ -4,9 +4,11 @@ import type { Address, Hex } from 'ox'
 import { getChainId } from 'wagmi/actions'
 import * as z from 'zod/mini'
 import { TOKEN_COUNT_MAX } from '#lib/constants'
+import { indexer } from '#lib/server/dex-indexer'
+import { tempoApi } from '#lib/server/env'
 import { api } from '#lib/server/tempo-api'
 import { zAddress } from '#lib/zod'
-import { getWagmiConfig } from '#wagmi.config.ts'
+import { getBatchedClient, getWagmiConfig } from '#wagmi.config.ts'
 
 const CACHE_TTL = 60_000
 const CACHE_MAX_ENTRIES = 20
@@ -233,6 +235,77 @@ const EMPTY_ACCOUNT_TRANSFERS_RESPONSE: AccountTransfersApiResponse = {
 	totalCapped: false,
 }
 
+/** Each token's metadata from the node; one it cannot describe has none. */
+export async function getTokensMetadata(tokens: Address.Address[]) {
+	const client = getBatchedClient()
+	return new Map(
+		await Promise.all(
+			[...new Set(tokens)].map(
+				async (token) =>
+					[
+						token,
+						await client.token.getMetadata({ token }).catch(() => undefined),
+					] as const,
+			),
+		),
+	)
+}
+
+/** A page of transfers, newest first, and how many match, from the build's own tidx. */
+async function indexedTransfers(params: {
+	chainId: number
+	page: number
+	limit: number
+	token?: Address.Address | undefined
+	account?: Address.Address | undefined
+	direction?: 'in' | 'out' | undefined
+}) {
+	const { account, direction } = params
+	const filters = [
+		params.token && `token = '${params.token}'`,
+		account &&
+			(direction === 'in'
+				? `\`to\` = '${account}'`
+				: direction === 'out'
+					? `\`from\` = '${account}'`
+					: `(\`from\` = '${account}' OR \`to\` = '${account}')`),
+	].filter(Boolean)
+	const where = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
+	const [rows, [counted]] = await Promise.all([
+		indexer(
+			params.chainId,
+			`SELECT token, \`from\`, \`to\`, toString(amount) AS amount, tx_hash, block_num, log_idx,
+				toUnixTimestamp(block_timestamp) AS timestamp
+			FROM token_transfers ${where}
+			ORDER BY block_num DESC, log_idx DESC
+			LIMIT ${params.limit} OFFSET ${(params.page - 1) * params.limit}`,
+		),
+		indexer(
+			params.chainId,
+			`SELECT count() AS n FROM token_transfers ${where}`,
+		),
+	])
+	return {
+		transfers: rows.map((row) => ({
+			id: `${row.tx_hash}-${row.log_idx}`,
+			token: row.token as Address.Address,
+			from: row.from as Address.Address,
+			to: row.to as Address.Address,
+			value: String(row.amount),
+			transactionHash: row.tx_hash as Hex.Hex,
+			blockNumber: String(row.block_num),
+			timestamp: String(row.timestamp),
+		})),
+		...resolveTotal({
+			exactCount: Number(counted?.n),
+			page: params.page,
+			limit: params.limit,
+			rows: rows.length,
+			exhausted: false,
+		}),
+	}
+}
+
 /**
  * Token transfers where the account is sender or recipient, across all
  * tokens (the address page's account-scoped Transfers tab). Rows span
@@ -245,6 +318,28 @@ export const fetchAccountTransfers = createServerFn({ method: 'POST' })
 			if (data.page * data.limit > COUNT_CAP)
 				return EMPTY_ACCOUNT_TRANSFERS_RESPONSE
 			const chainId = getChainId(getWagmiConfig())
+
+			if (!tempoApi) {
+				const page = await indexedTransfers({ chainId, ...data })
+				const metadata = await getTokensMetadata(
+					page.transfers.map((transfer) => transfer.token),
+				)
+				return {
+					...page,
+					transfers: page.transfers.map((transfer) => {
+						const token = metadata.get(transfer.token)
+						return {
+							...transfer,
+							token: {
+								address: transfer.token,
+								symbol: token?.symbol ?? '',
+								decimals: token?.decimals ?? 0,
+								currency: token?.currency ?? '',
+							},
+						}
+					}),
+				}
+			}
 
 			const page = await parseResponse(
 				api.v1.transfers.$get({
@@ -299,6 +394,14 @@ export const fetchTransfers = createServerFn({ method: 'POST' })
 		try {
 			if (data.page * data.limit > COUNT_CAP) return EMPTY_TRANSFERS_RESPONSE
 			const chainId = getChainId(getWagmiConfig())
+			if (!tempoApi)
+				return indexedTransfers({
+					chainId,
+					page: data.page,
+					limit: data.limit,
+					token: data.address,
+					account: data.account,
+				})
 
 			const [details, page] = await Promise.all([
 				getTokenDetails(chainId, data.address),

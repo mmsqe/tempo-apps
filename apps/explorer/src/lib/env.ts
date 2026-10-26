@@ -2,16 +2,17 @@ import * as z from 'zod/mini'
 import { createIsomorphicFn } from '@tanstack/react-start'
 import { getRequestUrl } from '@tanstack/react-start/server'
 
+/** A devnet build on another chain's node (`DEVNET_RPC_URL`): nothing in it calls a Tempo host. */
+export const ownBackends = import.meta.env.VITE_DEVNET_RPC_OVERRIDDEN === 'true'
+
 const clientEnvSchema = z.object({
-	CONTRACT_VERIFICATION_API_BASE_URL: z.prefault(
-		z.url(),
-		'https://contracts.tempo.xyz',
-	),
+	CONTRACT_VERIFICATION_API_BASE_URL: z.optional(z.url()),
 })
 
 export const clientEnv = clientEnvSchema.parse({
-	CONTRACT_VERIFICATION_API_BASE_URL: import.meta.env
-		.VITE_CONTRACT_VERIFICATION_API_BASE_URL,
+	CONTRACT_VERIFICATION_API_BASE_URL:
+		import.meta.env.VITE_CONTRACT_VERIFICATION_API_BASE_URL ||
+		(ownBackends ? undefined : 'https://contracts.tempo.xyz'),
 })
 
 export type TempoEnv =

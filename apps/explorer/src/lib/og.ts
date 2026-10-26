@@ -25,7 +25,8 @@ import type { TxData as TxDataQuery } from '#lib/queries'
 
 // ============ Constants ============
 
-export const OG_BASE_URL = 'https://og.tempo.xyz'
+export const OG_BASE_URL =
+	import.meta.env.VITE_OG_BASE_URL || 'https://og.tempo.xyz'
 
 export function buildZonePortalOgImageUrl(address: string): string {
 	return buildZonePortalOgUrl(OG_BASE_URL, address, getTempoEnv())

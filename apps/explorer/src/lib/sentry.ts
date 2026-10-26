@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react'
+import { ownBackends } from '#lib/env'
 
 const DEFAULT_TRACES_SAMPLE_RATE = 0.1
 
@@ -15,6 +16,7 @@ const SENTRY_DSN =
 export function initSentry(
 	router: Parameters<typeof Sentry.tanstackRouterBrowserTracingIntegration>[0],
 ): void {
+	if (ownBackends) return
 	Sentry.init({
 		dsn: SENTRY_DSN,
 		release: __BUILD_VERSION__,

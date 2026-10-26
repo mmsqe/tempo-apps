@@ -21,7 +21,6 @@ vi.mock('#lib/server/env', () => ({
 		url: 'https://api.tempo.xyz',
 		headers: { 'tempo-api-key': 'tempo-api-secret' },
 	},
-	tempoApiUrl: 'https://api.tempo.xyz',
 }))
 
 describe('Tempo query provider', () => {
@@ -32,7 +31,8 @@ describe('Tempo query provider', () => {
 	})
 
 	it('authenticates indexer requests with the Tempo API key', () => {
-		expect(mocks.create).toHaveBeenCalledWith({
+		provider.tempoQueryBuilder(4217)
+		expect(mocks.create).toHaveBeenLastCalledWith({
 			baseUrl: 'https://api.tempo.xyz/v1/indexer',
 			headers: { 'tempo-api-key': 'tempo-api-secret' },
 		})

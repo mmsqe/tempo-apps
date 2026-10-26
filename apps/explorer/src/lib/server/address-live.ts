@@ -10,8 +10,7 @@ import {
 import { readSse } from '#lib/sse'
 import { parseTimestamp } from '#lib/timestamp'
 import { api } from './tempo-api'
-import { tempoApi, tempoApiUrl } from './env'
-import { getChainBackend } from './network'
+import { getIndexerBackend } from './network'
 import {
 	buildTokenMetadataLookup,
 	toEnrichedTransaction,
@@ -46,7 +45,7 @@ export async function addressLiveResponse(
 	request.signal.addEventListener('abort', stop, { once: true })
 	if (request.signal.aborted) stop()
 	const deadline = setTimeout(stop, 120_000)
-	const backend = getChainBackend(chainId, 'tidx')
+	const backend = getIndexerBackend(chainId)
 	const encoder = new TextEncoder()
 	const seen = new Set<string>()
 	const metadata = new Map<
@@ -73,9 +72,7 @@ export async function addressLiveResponse(
 					controller.enqueue(encoder.encode(': heartbeat\n\n'))
 			}, 15_000)
 			const run = async (sql: string) => {
-				const url = new URL(
-					`${backend?.url ?? `${tempoApiUrl}/v1/indexer`}/query`,
-				)
+				const url = new URL(`${backend.url}/query`)
 				url.search = new URLSearchParams({
 					sql,
 					chainId: String(chainId),
@@ -83,10 +80,7 @@ export async function addressLiveResponse(
 				}).toString()
 				const response = await fetch(url, {
 					signal: abort.signal,
-					headers: {
-						Accept: 'text/event-stream',
-						...(backend?.headers ?? tempoApi.headers),
-					},
+					headers: { Accept: 'text/event-stream', ...backend.headers },
 				})
 				if (!response.ok || !response.body)
 					throw new Error(`Live indexer returned ${response.status}`)
@@ -104,7 +98,7 @@ export async function addressLiveResponse(
 							headers: {
 								Accept: 'application/json',
 								'Cache-Control': 'no-cache',
-								...(backend?.headers ?? tempoApi.headers),
+								...backend.headers,
 							},
 						})
 						if (!snapshot.ok) throw new Error('Live resynchronization failed')

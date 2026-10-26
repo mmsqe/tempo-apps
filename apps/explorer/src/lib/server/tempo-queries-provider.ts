@@ -1,38 +1,24 @@
 import { QB, Tidx } from 'tidx.ts'
-import { tempoApi, tempoApiUrl } from './env'
-import { getChainBackend } from './network'
-
-const tidx = Tidx.create({
-	baseUrl: `${tempoApiUrl}/v1/indexer`,
-	headers: tempoApi.headers,
-})
-
-tidx.on('response', (res) => {
-	if (!res.ok)
-		res
-			.clone()
-			.text()
-			.then((body) =>
-				console.error(
-					`[tidx:${res.status}]`,
-					decodeURIComponent(res.url),
-					body,
-				),
-			)
-})
+import { getIndexerBackend } from './network'
 
 export function tempoQueryBuilder(
 	chainId: number,
 	options: { engine?: string | undefined } = {},
 ) {
-	const target = getChainBackend(chainId, 'tidx')
-	if (target)
-		return QB.from({
-			...Tidx.create({ baseUrl: target.url, headers: target.headers }),
-			chainId,
-			...options,
-		})
+	const { url, headers } = getIndexerBackend(chainId)
+	const tidx = Tidx.create({ baseUrl: url, headers })
+	tidx.on('response', (res) => {
+		if (!res.ok)
+			res
+				.clone()
+				.text()
+				.then((body) =>
+					console.error(
+						`[tidx:${res.status}]`,
+						decodeURIComponent(res.url),
+						body,
+					),
+				)
+	})
 	return QB.from({ ...tidx, chainId, ...options })
 }
-
-export { tidx }

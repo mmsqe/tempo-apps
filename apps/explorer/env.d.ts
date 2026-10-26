@@ -8,6 +8,8 @@ interface EnvironmentVariables {
 	readonly VITE_SENTRY_TRACES_SAMPLE_RATE: string | undefined
 
 	readonly VITE_CONTRACT_VERIFICATION_API_BASE_URL: string
+	/** The social-card renderer (apps/og); Tempo's when unset. */
+	readonly VITE_OG_BASE_URL: string | undefined
 	/** Set in CI only (GitHub Actions secret). Unset means no PostHog at all. */
 	readonly VITE_EXPLORER_POSTHOG_KEY: string | undefined
 	readonly VITE_POSTHOG_HOST: string | undefined
