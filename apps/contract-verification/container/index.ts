@@ -20,6 +20,33 @@ function log(
 	console[level](JSON.stringify({ event, ...properties }))
 }
 
+/** Under the 15-minute limit on the job runner's alarm that waits for the compile. */
+const COMPILE_TIMEOUT_MS = 10 * 60 * 1_000
+
+/** Runs `compiler --standard-json` on `input`, killing it when the request ends or the time runs out. */
+async function compile(
+	request: Request,
+	compiler: string,
+	input: object,
+	env?: Record<string, string | undefined>,
+) {
+	const timeout = AbortSignal.timeout(COMPILE_TIMEOUT_MS)
+	const proc = Bun.spawn([compiler, '--standard-json'], {
+		env,
+		signal: AbortSignal.any([request.signal, timeout]),
+		stdin: new TextEncoder().encode(JSON.stringify(input)),
+		stdout: 'pipe',
+		stderr: 'pipe',
+	})
+
+	const stdout = await new Response(proc.stdout).text()
+	const stderr = await new Response(proc.stderr).text()
+	await proc.exited
+
+	if (timeout.aborted) throw new Error('Compilation timed out')
+	return { stdout, stderr }
+}
+
 const server = Bun.serve({
 	port: 8080,
 	development: Bun.env.NODE_ENV === 'development',
@@ -67,17 +94,12 @@ const server = Bun.serve({
 					}
 				} else compilerPath = await getSolcPath(body.compilerVersion)
 
-				// solc and solar --standard-json read from stdin
-				const proc = Bun.spawn([compilerPath, '--standard-json'], {
+				const { stdout, stderr } = await compile(
+					request,
+					compilerPath,
+					body.input,
 					env,
-					stdin: new TextEncoder().encode(JSON.stringify(body.input)),
-					stdout: 'pipe',
-					stderr: 'pipe',
-				})
-
-				const stdout = await new Response(proc.stdout).text()
-				const stderr = await new Response(proc.stderr).text()
-				await proc.exited
+				)
 
 				if (stderr) log('error', 'compile_stderr', { stderr })
 
@@ -124,16 +146,7 @@ const server = Bun.serve({
 
 				const vyperPath = await getVyperPath(body.compilerVersion)
 
-				// vyper --standard-json reads from stdin
-				const proc = Bun.spawn([vyperPath, '--standard-json'], {
-					stdin: new TextEncoder().encode(JSON.stringify(body.input)),
-					stdout: 'pipe',
-					stderr: 'pipe',
-				})
-
-				const stdout = await new Response(proc.stdout).text()
-				const stderr = await new Response(proc.stderr).text()
-				await proc.exited
+				const { stdout, stderr } = await compile(request, vyperPath, body.input)
 
 				// Vyper < 0.4.0 outputs warnings to stderr, so only log if it looks like an error
 				if (stderr && !stderr.includes('Warning'))
